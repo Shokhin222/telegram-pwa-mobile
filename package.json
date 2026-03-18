@@ -1,0 +1,12 @@
+{
+  "name": "telegram-pwa-mobile",
+  "version": "1.0.0",
+  "description": "Mobile messenger PWA inspired by Telegram",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

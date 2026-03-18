@@ -1,0 +1,103 @@
+{
+  "users": [
+    {
+      "id": "u1",
+      "username": "demo",
+      "password": "demo",
+      "name": "Demo User",
+      "online": true,
+      "avatarColor": "#5b8cff",
+      "bio": "Буду на связи"
+    },
+    {
+      "id": "u2",
+      "username": "alina",
+      "password": "demo",
+      "name": "Alina",
+      "online": true,
+      "avatarColor": "#44c4a1",
+      "bio": "В сети"
+    },
+    {
+      "id": "u3",
+      "username": "max",
+      "password": "demo",
+      "name": "Max",
+      "online": false,
+      "avatarColor": "#ff8a5b",
+      "bio": "Занят"
+    },
+    {
+      "id": "u1773844422014",
+      "username": "nasriddinov",
+      "password": "12345",
+      "name": "Шохин",
+      "online": true,
+      "avatarColor": "#c26bff",
+      "bio": "Новый пользователь"
+    }
+  ],
+  "chats": [
+    {
+      "id": "c1",
+      "members": [
+        "u1",
+        "u2"
+      ],
+      "messages": [
+        {
+          "id": "m1",
+          "senderId": "u2",
+          "type": "text",
+          "text": "Привет 👋",
+          "createdAt": 1773841113452
+        },
+        {
+          "id": "m2",
+          "senderId": "u1",
+          "type": "text",
+          "text": "Готово, теперь это мобильная версия 😎",
+          "createdAt": 1773841413452
+        },
+        {
+          "id": "m3",
+          "senderId": "u2",
+          "type": "image",
+          "image": "data:image/svg+xml;base64,CiAgICA8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjQ4MCIgaGVpZ2h0PSIzMDAiIHZpZXdCb3g9IjAgMCA0ODAgMzAwIj4KICAgICAgPGRlZnM+CiAgICAgICAgPGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeDI9IjEiIHkxPSIwIiB5Mj0iMSI+CiAgICAgICAgICA8c3RvcCBzdG9wLWNvbG9yPSIjNmFhOWZmIiBvZmZzZXQ9IjAiLz4KICAgICAgICAgIDxzdG9wIHN0b3AtY29sb3I9IiM3ZWYwYzMiIG9mZnNldD0iMSIvPgogICAgICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICAgIDwvZGVmcz4KICAgICAgPHJlY3Qgd2lkdGg9IjQ4MCIgaGVpZ2h0PSIzMDAiIHJ4PSIyNCIgZmlsbD0idXJsKCNnKSIvPgogICAgICA8Y2lyY2xlIGN4PSIxMjAiIGN5PSI5MCIgcj0iMzIiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsLjgpIi8+CiAgICAgIDxwYXRoIGQ9Ik0wIDIzMCBDOTAgMTUwLCAxNzAgMjgwLCAyNjAgMjEwIFM0MjAgMTUwLCA0ODAgMjIwIFYzMDAgSDAgWiIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwuNDUpIi8+CiAgICAgIDx0ZXh0IHg9IjM2IiB5PSIyNjAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyOCIgZmlsbD0iIzA4MzA0ZCI+0KTQvtGC0L4g0LIg0YfQsNGC0LU8L3RleHQ+CiAgICA8L3N2Zz4KICA=",
+          "createdAt": 1773841533452
+        },
+        {
+          "id": "m4",
+          "senderId": "u1",
+          "type": "voice",
+          "audio": "data:audio/wav;base64,UklGRlQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YTAAAAAA",
+          "duration": "0:03",
+          "createdAt": 1773841713452
+        }
+      ]
+    },
+    {
+      "id": "c2",
+      "members": [
+        "u1",
+        "u3"
+      ],
+      "messages": [
+        {
+          "id": "m5",
+          "senderId": "u3",
+          "type": "text",
+          "text": "Проверим как выглядит на телефоне?",
+          "createdAt": 1773837213452
+        },
+        {
+          "id": "m6",
+          "senderId": "u1",
+          "type": "text",
+          "text": "Да, интерфейс уже под iPhone/Android.",
+          "createdAt": 1773837813452
+        }
+      ]
+    }
+  ]
+}

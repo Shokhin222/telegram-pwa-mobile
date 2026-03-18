@@ -1,0 +1,15 @@
+{
+  "name": "Telegram Mobile Lite",
+  "short_name": "TeleLite",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0e1621",
+  "theme_color": "#0e1621",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiB2aWV3Qm94PSIwIDAgMTkyIDE5MiI+PHJlY3Qgd2lkdGg9IjE5MiIgaGVpZ2h0PSIxOTIiIHJ4PSI0MiIgZmlsbD0iIzJDOEFFRiIvPjxwYXRoIGQ9Ik0xNDEgNTdsLTIwLjYgOTcuMS0zNS40LTI5LjMtMTkuMSAxNC44IDE0LjYtNDkuNCA2MC41LTMzLjJ6IiBmaWxsPSIjZmZmIi8+PC9zdmc+",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}
