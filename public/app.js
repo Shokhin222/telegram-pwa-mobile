@@ -1,317 +1,394 @@
 const state = {
-  mode: 'login',
-  user: null,
+  token: localStorage.getItem('pulse_token') || '',
+  me: null,
   users: [],
-  chats: [],
-  activeChatId: null,
-  tab: 'chats',
-  recorder: null,
-  recording: false,
-  audioChunks: []
+  messages: [],
+  onlineUserIds: [],
+  activePeerId: null,
+  socket: null,
+  mediaRecorder: null,
+  recordChunks: [],
+  peerConnection: null,
+  localStream: null,
+  callPeerId: null,
+  incomingFrom: null,
+  typingTimers: {}
 };
 
-const app = document.getElementById('app');
+const els = {
+  authScreen: document.getElementById('authScreen'),
+  mainScreen: document.getElementById('mainScreen'),
+  authError: document.getElementById('authError'),
+  loginForm: document.getElementById('loginForm'),
+  registerForm: document.getElementById('registerForm'),
+  chatList: document.getElementById('chatList'),
+  searchInput: document.getElementById('searchInput'),
+  selfAvatar: document.getElementById('selfAvatar'),
+  selfName: document.getElementById('selfName'),
+  selfPhone: document.getElementById('selfPhone'),
+  avatarInput: document.getElementById('avatarInput'),
+  emptyState: document.getElementById('emptyState'),
+  chatView: document.getElementById('chatView'),
+  peerAvatar: document.getElementById('peerAvatar'),
+  peerName: document.getElementById('peerName'),
+  peerStatus: document.getElementById('peerStatus'),
+  messagesEl: document.getElementById('messagesEl'),
+  messageInput: document.getElementById('messageInput'),
+  composer: document.getElementById('composer'),
+  typingBar: document.getElementById('typingBar'),
+  imageInput: document.getElementById('imageInput'),
+  recordBtn: document.getElementById('recordBtn'),
+  callBtn: document.getElementById('callBtn'),
+  callModal: document.getElementById('callModal'),
+  callAvatar: document.getElementById('callAvatar'),
+  callTitle: document.getElementById('callTitle'),
+  callSubtitle: document.getElementById('callSubtitle'),
+  acceptCallBtn: document.getElementById('acceptCallBtn'),
+  declineCallBtn: document.getElementById('declineCallBtn'),
+  remoteAudio: document.getElementById('remoteAudio')
+};
 
-function initials(name) {
-  return (name || '?').split(' ').map(s => s[0]).join('').slice(0, 2).toUpperCase();
-}
+document.querySelectorAll('.tab').forEach((tab) => tab.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+  document.querySelectorAll('.auth-form').forEach((f) => f.classList.remove('active'));
+  tab.classList.add('active');
+  document.getElementById(`${tab.dataset.tab}Form`).classList.add('active');
+  els.authError.textContent = '';
+}));
 
-function fmtTime(ts) {
-  return new Date(ts).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-}
-
-function currentChat() {
-  return state.chats.find(c => c.id === state.activeChatId);
-}
-
-function chatPeer(chat) {
-  const otherId = chat.members.find(id => id !== state.user.id);
-  return state.users.find(u => u.id === otherId);
-}
+els.loginForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  await auth('/api/login', Object.fromEntries(fd.entries()));
+});
+els.registerForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const res = await auth('/api/register', Object.fromEntries(fd.entries()));
+  if (res?.note) alert(res.note);
+});
+els.searchInput.addEventListener('input', renderChatList);
+els.avatarInput.addEventListener('change', uploadAvatar);
+els.imageInput.addEventListener('change', sendImage);
+els.composer.addEventListener('submit', sendText);
+els.messageInput.addEventListener('input', onTyping);
+els.recordBtn.addEventListener('click', toggleRecording);
+els.callBtn.addEventListener('click', startCall);
+els.acceptCallBtn.addEventListener('click', acceptIncomingCall);
+els.declineCallBtn.addEventListener('click', declineOrEndCall);
 
 async function api(url, options = {}) {
-  const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options
-  });
+  const headers = options.headers || {};
+  if (!(options.body instanceof FormData)) headers['Content-Type'] = 'application/json';
+  if (state.token) headers['Authorization'] = `Bearer ${state.token}`;
+  const res = await fetch(url, { ...options, headers });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || 'Ошибка');
+  if (!res.ok) throw new Error(data.error || 'Ошибка запроса');
   return data;
 }
 
-async function loadData() {
-  const data = await api(`/api/bootstrap?userId=${state.user.id}`);
-  state.users = data.users;
-  state.chats = data.chats.sort((a, b) => (b.messages.at(-1)?.createdAt || 0) - (a.messages.at(-1)?.createdAt || 0));
-  if (!state.activeChatId && state.chats[0]) state.activeChatId = state.chats[0].id;
-  render();
-}
-
-function renderAuth(error = '') {
-  app.innerHTML = `
-    <div class="auth-wrap">
-      <div class="auth-card">
-        <div class="logo">✈️</div>
-        <h1 class="title">Telegram Mobile Lite</h1>
-        <div class="sub center">Открывай на iPhone или Android и добавляй на главный экран</div>
-        <div class="switcher">
-          <button class="${state.mode === 'login' ? 'active' : ''}" onclick="setMode('login')">Вход</button>
-          <button class="${state.mode === 'register' ? 'active' : ''}" onclick="setMode('register')">Регистрация</button>
-        </div>
-        <div class="form">
-          ${state.mode === 'register' ? '<input id="name" class="input" placeholder="Имя" />' : ''}
-          <input id="username" class="input" placeholder="Логин" />
-          <input id="password" class="input" type="password" placeholder="Пароль" />
-          <button class="auth-btn" onclick="submitAuth()">${state.mode === 'login' ? 'Войти' : 'Создать аккаунт'}</button>
-          <div class="error">${error}</div>
-          <div class="pill">Демо: demo / demo</div>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function renderHome() {
-  const activeTab = state.tab;
-  const chatCards = state.chats.map(chat => {
-    const peer = chatPeer(chat);
-    const last = chat.messages.at(-1);
-    const preview = chat.typing === peer?.id ? 'печатает…' : (last?.type === 'image' ? '📷 Фото' : last?.type === 'voice' ? '🎤 Голосовое' : last?.text || 'Пустой чат');
-    return `
-      <div class="card" onclick="openChat('${chat.id}')">
-        <div class="avatar" style="background:${peer?.avatarColor || '#607d8b'}">${initials(peer?.name)}</div>
-        <div class="card-body">
-          <div class="row">
-            <div class="name">${peer?.name || 'Чат'}</div>
-            <div class="time">${last ? fmtTime(last.createdAt) : ''}</div>
-          </div>
-          <div class="row">
-            <div class="preview ${chat.typing === peer?.id ? 'typing' : ''}">${preview}</div>
-            ${chat.unread ? `<div class="badge">${chat.unread}</div>` : ''}
-          </div>
-        </div>
-      </div>`;
-  }).join('');
-
-  const contacts = state.users.filter(u => u.id !== state.user.id).map(u => `
-    <div class="card" onclick="startChatWith('${u.id}')">
-      <div class="avatar" style="background:${u.avatarColor}">${initials(u.name)}</div>
-      <div class="card-body">
-        <div class="row"><div class="name">${u.name}</div><div class="time">@${u.username}</div></div>
-        <div class="preview">${u.online ? 'в сети' : u.bio || 'не в сети'}</div>
-      </div>
-    </div>
-  `).join('');
-
-  app.innerHTML = `
-    <div class="mobile-shell">
-      <div class="screen ${state.activeChatId ? 'hidden' : ''}">
-        <div class="header">
-          <div class="header-row">
-            <div class="avatar" style="background:${state.user.avatarColor}; width:42px; height:42px;">${initials(state.user.name)}</div>
-            <div>
-              <div class="brand">Сообщения</div>
-              <div class="sub">${state.user.name} · @${state.user.username}</div>
-            </div>
-          </div>
-          <div class="search">
-            <span>🔎</span>
-            <input placeholder="Поиск" oninput="filterCards(this.value)" />
-          </div>
-        </div>
-
-        <div class="list view-${activeTab}">
-          ${activeTab === 'chats' ? chatCards : activeTab === 'contacts' ? `<div class="contact-list">${contacts}</div>` : activeTab === 'calls' ? `<div class="card"><div class="card-body"><div class="name">Звонки</div><div class="preview">Интерфейс готов. Реальные звонки можно добавить позже через WebRTC.</div></div></div>` : `<div class="card"><div class="card-body"><div class="name">Настройки</div><div class="preview">PWA, тёмная тема, мобильная раскладка, фото и голосовые уже готовы.</div></div></div>`}
-        </div>
-
-        <button class="fab" onclick="state.tab='contacts'; render()">✎</button>
-
-        <div class="tabbar">
-          <button class="tab ${activeTab === 'contacts' ? 'active' : ''}" onclick="setTab('contacts')">Контакты</button>
-          <button class="tab ${activeTab === 'calls' ? 'active' : ''}" onclick="setTab('calls')">Звонки</button>
-          <button class="tab ${activeTab === 'chats' ? 'active' : ''}" onclick="setTab('chats')">Чаты</button>
-          <button class="tab ${activeTab === 'settings' ? 'active' : ''}" onclick="setTab('settings')">Настройки</button>
-        </div>
-      </div>
-      ${state.activeChatId ? renderChat() : ''}
-    </div>
-  `;
-}
-
-function renderChat() {
-  const chat = currentChat();
-  if (!chat) return '';
-  const peer = chatPeer(chat);
-  const messages = chat.messages.map(m => {
-    const mine = m.senderId === state.user.id;
-    const content = m.type === 'image'
-      ? `<div class="bubble"><img src="${m.image}" alt="image" /></div>`
-      : m.type === 'voice'
-      ? `<div class="bubble"><div class="voice"><span>🎤</span><div class="wave"></div><span>${m.duration || '0:01'}</span></div>${m.audio ? `<audio controls src="${m.audio}" style="width:100%; margin-top:8px"></audio>` : ''}</div>`
-      : `<div class="bubble">${escapeHtml(m.text)}</div>`;
-    return `<div class="msg ${mine ? 'mine' : ''}">${content}<div class="meta"><span>${fmtTime(m.createdAt)}</span>${mine ? '<span>✓✓</span>' : ''}</div></div>`;
-  }).join('');
-
-  return `
-    <div class="chat-screen">
-      <div class="chat-header">
-        <div class="chat-top">
-          <button class="back" onclick="closeChat()">←</button>
-          <div class="avatar" style="background:${peer?.avatarColor}; width:42px; height:42px;">${initials(peer?.name)}</div>
-          <div class="chat-user">
-            <div class="name">${peer?.name}</div>
-            <div class="sub">${peer?.online ? 'в сети' : peer?.bio || 'был недавно'}</div>
-          </div>
-          <button class="icon-btn" onclick="alert('Можно добавить звонки через WebRTC')">📞</button>
-        </div>
-      </div>
-      <div class="messages" id="messages">
-        <div class="day-sep">Сегодня</div>
-        ${messages}
-      </div>
-      <div class="composer">
-        <div class="composer-bar">
-          <label class="attach" title="Фото">
-            📎
-            <input type="file" accept="image/*" hidden onchange="sendImage(event)" />
-          </label>
-          <textarea id="composerInput" placeholder="Сообщение"></textarea>
-          <div class="inline-actions">
-            <button class="icon-btn" onclick="toggleRecord()">${state.recording ? '■' : '🎤'}</button>
-            <button class="send" onclick="sendText()">➤</button>
-          </div>
-        </div>
-        <div class="micro">Чтобы установить как приложение на iPhone: Safari → Поделиться → На экран «Домой»</div>
-      </div>
-    </div>
-  `;
-}
-
-function escapeHtml(value='') {
-  return value.replace(/[&<>"']/g, s => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[s]));
-}
-
-window.setMode = function(mode) { state.mode = mode; renderAuth(); };
-window.setTab = function(tab) { state.tab = tab; render(); };
-window.openChat = function(chatId) { state.activeChatId = chatId; render(); setTimeout(scrollBottom, 50); };
-window.closeChat = function() { state.activeChatId = null; render(); };
-window.filterCards = function(query) {
-  query = query.toLowerCase();
-  document.querySelectorAll('.card').forEach(card => {
-    card.style.display = card.textContent.toLowerCase().includes(query) ? '' : 'none';
-  });
-};
-window.startChatWith = function(userId) {
-  let chat = state.chats.find(c => c.members.includes(userId) && c.members.includes(state.user.id));
-  if (!chat) {
-    chat = { id: 'local-' + Date.now(), members: [state.user.id, userId], messages: [], unread: 0 };
-    state.chats.unshift(chat);
-  }
-  state.activeChatId = chat.id;
-  state.tab = 'chats';
-  render();
-};
-
-window.submitAuth = async function() {
-  const username = document.getElementById('username')?.value?.trim();
-  const password = document.getElementById('password')?.value?.trim();
-  const name = document.getElementById('name')?.value?.trim();
+async function auth(url, payload) {
   try {
-    const endpoint = state.mode === 'login' ? '/api/login' : '/api/register';
-    const payload = state.mode === 'login' ? { username, password } : { username, password, name };
-    const data = await api(endpoint, { method: 'POST', body: JSON.stringify(payload) });
-    state.user = data.user;
-    await loadData();
-  } catch (e) {
-    renderAuth(e.message);
+    const data = await api(url, { method: 'POST', body: JSON.stringify(payload) });
+    state.token = data.token;
+    localStorage.setItem('pulse_token', state.token);
+    await bootstrap();
+    return data;
+  } catch (err) {
+    els.authError.textContent = err.message;
   }
-};
+}
 
-window.sendText = async function() {
-  const input = document.getElementById('composerInput');
-  const text = input.value.trim();
-  if (!text) return;
-  const chat = currentChat();
-  if (chat.id.startsWith('local-')) {
-    chat.messages.push({ id: 'm' + Date.now(), senderId: state.user.id, type: 'text', text, createdAt: Date.now() });
+function renderAvatar(container, user) {
+  container.innerHTML = '';
+  container.style.background = `linear-gradient(135deg, ${user.color || '#2563eb'}, #9333ea)`;
+  if (user.avatarUrl) {
+    const img = document.createElement('img');
+    img.src = user.avatarUrl;
+    container.appendChild(img);
   } else {
-    const { message } = await api('/api/message', { method: 'POST', body: JSON.stringify({ chatId: chat.id, senderId: state.user.id, type: 'text', text }) });
-    chat.messages.push(message);
+    container.textContent = (user.name || '?').slice(0, 1).toUpperCase();
   }
-  input.value = '';
-  render();
-  scrollBottom();
-};
+}
 
-window.sendImage = async function(event) {
-  const file = event.target.files?.[0];
+function chatPreview(peer) {
+  const list = convoWith(peer.id);
+  const last = list[list.length - 1];
+  return last ? (last.type === 'text' ? last.text : last.type === 'image' ? '🖼️ Фото' : '🎤 Голосовое') : 'Сообщений пока нет';
+}
+
+function unreadCount(peerId) {
+  return convoWith(peerId).filter((m) => m.to === state.me.id && m.from === peerId && !(m.readBy || []).includes(state.me.id)).length;
+}
+
+function convoWith(peerId) {
+  return state.messages.filter((m) => [m.from, m.to].includes(state.me.id) && [m.from, m.to].includes(peerId)).sort((a,b)=>a.createdAt-b.createdAt);
+}
+
+function getPeer() { return state.users.find((u) => u.id === state.activePeerId); }
+
+function renderChatList() {
+  const q = els.searchInput.value.trim().toLowerCase();
+  const peers = state.users.filter((u) => !u.isSelf && (`${u.name} ${u.phone}`).toLowerCase().includes(q));
+  peers.sort((a,b) => {
+    const at = convoWith(a.id).at(-1)?.createdAt || 0;
+    const bt = convoWith(b.id).at(-1)?.createdAt || 0;
+    return bt - at;
+  });
+  els.chatList.innerHTML = '';
+  for (const peer of peers) {
+    const item = document.createElement('button');
+    item.className = `chat-item ${state.activePeerId === peer.id ? 'active' : ''}`;
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar';
+    renderAvatar(avatar, peer);
+    const unread = unreadCount(peer.id);
+    item.innerHTML = `<div class="meta"><div class="top"><strong>${peer.name}</strong><span class="muted">${isOnline(peer.id) ? 'online' : 'offline'}</span></div><div class="snippet">${escapeHtml(chatPreview(peer))}</div></div>${unread ? `<span class="badge">${unread}</span>` : ''}`;
+    item.prepend(avatar);
+    item.onclick = () => selectChat(peer.id);
+    els.chatList.appendChild(item);
+  }
+}
+
+async function bootstrap() {
+  try {
+    const data = await api('/api/bootstrap');
+    state.me = data.user;
+    state.users = data.users;
+    state.messages = data.messages;
+    state.onlineUserIds = data.onlineUserIds;
+    renderSelf();
+    renderChatList();
+    connectSocket();
+    els.authScreen.classList.add('hidden');
+    els.mainScreen.classList.remove('hidden');
+  } catch {
+    localStorage.removeItem('pulse_token');
+    state.token = '';
+  }
+}
+
+function renderSelf() {
+  renderAvatar(els.selfAvatar, state.me);
+  els.selfName.textContent = state.me.name;
+  els.selfPhone.textContent = state.me.phone;
+}
+
+function isOnline(userId) { return state.onlineUserIds.includes(userId); }
+
+async function selectChat(peerId) {
+  state.activePeerId = peerId;
+  renderChatList();
+  const peer = getPeer();
+  els.emptyState.classList.add('hidden');
+  els.chatView.classList.remove('hidden');
+  renderAvatar(els.peerAvatar, peer);
+  els.peerName.textContent = peer.name;
+  els.peerStatus.textContent = isOnline(peer.id) ? 'В сети' : `Был(а) ${fmt(peer.lastSeenAt)}`;
+  renderMessages();
+  await api('/api/messages/read', { method: 'POST', body: JSON.stringify({ peerId }) });
+}
+
+function renderMessages() {
+  const peer = getPeer();
+  if (!peer) return;
+  const messages = convoWith(peer.id);
+  els.messagesEl.innerHTML = '';
+  for (const m of messages) {
+    const div = document.createElement('div');
+    div.className = `bubble ${m.from === state.me.id ? 'self' : 'peer'}`;
+    let inner = '';
+    if (m.type === 'image') inner += `<img src="${m.imageUrl}" alt="image" />`;
+    if (m.type === 'audio') inner += `<audio controls src="${m.audioUrl}"></audio>`;
+    if (m.text) inner += `<div>${escapeHtml(m.text)}</div>`;
+    inner += `<div class="time">${fmt(m.createdAt)}</div>`;
+    div.innerHTML = inner;
+    els.messagesEl.appendChild(div);
+  }
+  els.messagesEl.scrollTop = els.messagesEl.scrollHeight;
+}
+
+async function sendText(e) {
+  e.preventDefault();
+  const text = els.messageInput.value.trim();
+  if (!text || !state.activePeerId) return;
+  await api('/api/messages', { method: 'POST', body: JSON.stringify({ to: state.activePeerId, text }) });
+  els.messageInput.value = '';
+  onTyping(true);
+}
+
+async function sendImage(e) {
+  const file = e.target.files[0];
+  if (!file || !state.activePeerId) return;
+  const fd = new FormData();
+  fd.append('image', file);
+  fd.append('to', state.activePeerId);
+  await api('/api/messages', { method: 'POST', body: fd });
+  e.target.value = '';
+}
+
+async function uploadAvatar(e) {
+  const file = e.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async () => {
-    const chat = currentChat();
-    const payload = { id: 'm' + Date.now(), senderId: state.user.id, type: 'image', image: reader.result, createdAt: Date.now() };
-    if (chat.id.startsWith('local-')) chat.messages.push(payload);
-    else {
-      const { message } = await api('/api/message', { method: 'POST', body: JSON.stringify({ chatId: chat.id, senderId: state.user.id, type: 'image', image: reader.result }) });
-      chat.messages.push(message);
-    }
-    render();
-    scrollBottom();
-  };
-  reader.readAsDataURL(file);
-};
+  const fd = new FormData();
+  fd.append('avatar', file);
+  const data = await api('/api/profile/avatar', { method: 'POST', body: fd });
+  state.me = data.user;
+  state.users = state.users.map((u) => u.id === state.me.id ? { ...u, ...state.me } : u);
+  renderSelf();
+  renderChatList();
+}
 
-window.toggleRecord = async function() {
-  if (!navigator.mediaDevices?.getUserMedia) {
-    alert('Запись голоса не поддерживается в этом браузере');
+function connectSocket() {
+  if (state.socket) state.socket.disconnect();
+  state.socket = io({ auth: { token: state.token } });
+  state.socket.on('message:new', (message) => {
+    if (!state.messages.find((m) => m.id === message.id)) state.messages.push(message);
+    renderChatList();
+    if (state.activePeerId && [message.from, message.to].includes(state.activePeerId)) renderMessages();
+  });
+  state.socket.on('presence:update', ({ userId, online, lastSeenAt }) => {
+    state.onlineUserIds = online ? [...new Set([...state.onlineUserIds, userId])] : state.onlineUserIds.filter((id) => id !== userId);
+    state.users = state.users.map((u) => u.id === userId ? { ...u, lastSeenAt: lastSeenAt || u.lastSeenAt } : u);
+    renderChatList();
+    if (state.activePeerId === userId) {
+      const peer = getPeer();
+      els.peerStatus.textContent = isOnline(userId) ? 'В сети' : `Был(а) ${fmt(peer.lastSeenAt)}`;
+    }
+  });
+  state.socket.on('typing:update', ({ from, isTyping }) => {
+    if (state.activePeerId === from) els.typingBar.textContent = isTyping ? 'Печатает…' : '';
+  });
+  state.socket.on('user:update', (user) => {
+    state.users = state.users.map((u) => u.id === user.id ? { ...u, ...user } : u);
+    renderChatList();
+    if (state.activePeerId === user.id) renderAvatar(els.peerAvatar, user);
+  });
+  state.socket.on('call:incoming', ({ from }) => showCallModal(from, true));
+  state.socket.on('call:accepted', async ({ from }) => { state.callPeerId = from; els.callSubtitle.textContent = 'Соединение…'; await createOffer(false); });
+  state.socket.on('call:declined', () => closeCall('Звонок отклонён'));
+  state.socket.on('call:ended', () => closeCall('Звонок завершён'));
+  state.socket.on('webrtc:offer', async ({ from, sdp }) => {
+    state.callPeerId = from;
+    await ensurePeerConnection();
+    await state.peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
+    const answer = await state.peerConnection.createAnswer();
+    await state.peerConnection.setLocalDescription(answer);
+    state.socket.emit('webrtc:answer', { to: from, sdp: answer });
+    els.callSubtitle.textContent = 'Соединение установлено';
+  });
+  state.socket.on('webrtc:answer', async ({ sdp }) => {
+    await state.peerConnection?.setRemoteDescription(new RTCSessionDescription(sdp));
+    els.callSubtitle.textContent = 'Соединение установлено';
+  });
+  state.socket.on('webrtc:ice', async ({ candidate }) => {
+    try { await state.peerConnection?.addIceCandidate(new RTCIceCandidate(candidate)); } catch {}
+  });
+}
+
+function onTyping(forceStop = false) {
+  if (!state.activePeerId || !state.socket) return;
+  const isTyping = forceStop ? false : !!els.messageInput.value.trim();
+  state.socket.emit('typing', { to: state.activePeerId, isTyping });
+}
+
+async function toggleRecording() {
+  if (!navigator.mediaDevices?.getUserMedia) return alert('Браузер не даёт доступ к микрофону.');
+  if (state.mediaRecorder?.state === 'recording') {
+    state.mediaRecorder.stop();
+    els.recordBtn.textContent = '🎤';
     return;
   }
-  if (!state.recording) {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    state.audioChunks = [];
-    state.recorder = new MediaRecorder(stream);
-    state.recorder.ondataavailable = e => state.audioChunks.push(e.data);
-    state.recorder.onstop = async () => {
-      const blob = new Blob(state.audioChunks, { type: 'audio/webm' });
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const audio = reader.result;
-        const chat = currentChat();
-        const payload = { id: 'm' + Date.now(), senderId: state.user.id, type: 'voice', audio, duration: '0:03', createdAt: Date.now() };
-        if (chat.id.startsWith('local-')) chat.messages.push(payload);
-        else {
-          const { message } = await api('/api/message', { method: 'POST', body: JSON.stringify({ chatId: chat.id, senderId: state.user.id, type: 'voice', audio, duration: '0:03' }) });
-          chat.messages.push(message);
-        }
-        render();
-        scrollBottom();
-      };
-      reader.readAsDataURL(blob);
-      stream.getTracks().forEach(t => t.stop());
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  state.recordChunks = [];
+  state.mediaRecorder = new MediaRecorder(stream);
+  state.mediaRecorder.ondataavailable = (e) => state.recordChunks.push(e.data);
+  state.mediaRecorder.onstop = async () => {
+    const blob = new Blob(state.recordChunks, { type: 'audio/webm' });
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      await api('/api/messages', { method: 'POST', body: JSON.stringify({ to: state.activePeerId, audioBase64: reader.result }) });
+      stream.getTracks().forEach((t) => t.stop());
     };
-    state.recorder.start();
-    state.recording = true;
-    render();
-  } else {
-    state.recorder.stop();
-    state.recording = false;
-    render();
-  }
-};
-
-function scrollBottom() {
-  const messages = document.getElementById('messages');
-  if (messages) messages.scrollTop = messages.scrollHeight;
+    reader.readAsDataURL(blob);
+  };
+  state.mediaRecorder.start();
+  els.recordBtn.textContent = '⏹️';
 }
 
-function render() {
-  if (!state.user) return renderAuth();
-  renderHome();
-  setTimeout(scrollBottom, 30);
+function peerById(id) { return state.users.find((u) => u.id === id); }
+
+function showCallModal(peerId, incoming = false) {
+  const peer = peerById(peerId);
+  state.incomingFrom = incoming ? peerId : null;
+  state.callPeerId = peerId;
+  renderAvatar(els.callAvatar, peer);
+  els.callTitle.textContent = incoming ? `Входящий звонок: ${peer.name}` : `Звоним: ${peer.name}`;
+  els.callSubtitle.textContent = incoming ? 'Нажми принять' : 'Ожидание ответа…';
+  els.acceptCallBtn.classList.toggle('hidden', !incoming);
+  els.callModal.classList.remove('hidden');
 }
 
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+async function startCall() {
+  if (!state.activePeerId) return;
+  showCallModal(state.activePeerId, false);
+  state.socket.emit('call:invite', { to: state.activePeerId });
 }
 
-render();
+async function acceptIncomingCall() {
+  const from = state.incomingFrom;
+  if (!from) return;
+  els.acceptCallBtn.classList.add('hidden');
+  els.callSubtitle.textContent = 'Подключаем микрофон…';
+  await ensurePeerConnection();
+  state.socket.emit('call:accept', { to: from });
+}
+
+function declineOrEndCall() {
+  if (state.callPeerId && state.socket) state.socket.emit('call:end', { to: state.callPeerId });
+  closeCall('Звонок завершён');
+}
+
+async function ensurePeerConnection() {
+  if (state.peerConnection) return;
+  state.localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+  state.localStream.getTracks().forEach((track) => pc.addTrack(track, state.localStream));
+  pc.ontrack = (event) => { els.remoteAudio.srcObject = event.streams[0]; };
+  pc.onicecandidate = (event) => {
+    if (event.candidate && state.callPeerId) state.socket.emit('webrtc:ice', { to: state.callPeerId, candidate: event.candidate });
+  };
+  pc.onconnectionstatechange = () => {
+    if (['failed', 'disconnected', 'closed'].includes(pc.connectionState)) closeCall('Соединение потеряно');
+  };
+  state.peerConnection = pc;
+}
+
+async function createOffer(createPc = true) {
+  if (createPc) await ensurePeerConnection();
+  const offer = await state.peerConnection.createOffer();
+  await state.peerConnection.setLocalDescription(offer);
+  state.socket.emit('webrtc:offer', { to: state.callPeerId, sdp: offer });
+}
+
+function closeCall(text) {
+  els.callSubtitle.textContent = text;
+  setTimeout(() => els.callModal.classList.add('hidden'), 500);
+  state.peerConnection?.close();
+  state.peerConnection = null;
+  state.localStream?.getTracks().forEach((t) => t.stop());
+  state.localStream = null;
+  state.callPeerId = null;
+  state.incomingFrom = null;
+  els.acceptCallBtn.classList.add('hidden');
+}
+
+function fmt(ts) {
+  return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+function escapeHtml(value) {
+  return String(value || '').replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+}
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+bootstrap();

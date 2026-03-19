@@ -1,103 +1,72 @@
 {
   "users": [
     {
-      "id": "u1",
-      "username": "demo",
-      "password": "demo",
-      "name": "Demo User",
-      "online": true,
-      "avatarColor": "#5b8cff",
-      "bio": "Буду на связи"
+      "id": "2b88820f-4a2d-4516-8e06-edc811307c8f",
+      "phone": "+10000000001",
+      "name": "Demo",
+      "passwordHash": "2a97516c354b68848cdbd8f54a226a0a55b21ed138e207ad6c5cbb9c00aa5aea",
+      "avatarUrl": "",
+      "color": "#5b8cff",
+      "createdAt": 1773902832552,
+      "lastSeenAt": 1773902832552
     },
     {
-      "id": "u2",
-      "username": "alina",
-      "password": "demo",
+      "id": "1f1a527f-d7d3-4477-bd66-3c21389aa2d3",
+      "phone": "+10000000002",
       "name": "Alina",
-      "online": true,
-      "avatarColor": "#44c4a1",
-      "bio": "В сети"
+      "passwordHash": "2a97516c354b68848cdbd8f54a226a0a55b21ed138e207ad6c5cbb9c00aa5aea",
+      "avatarUrl": "",
+      "color": "#f97316",
+      "createdAt": 1773902832552,
+      "lastSeenAt": 1773902832552
     },
     {
-      "id": "u3",
-      "username": "max",
-      "password": "demo",
+      "id": "f3cb1eea-25be-4d85-8999-dee1c5e1e029",
+      "phone": "+10000000003",
       "name": "Max",
-      "online": false,
-      "avatarColor": "#ff8a5b",
-      "bio": "Занят"
-    },
-    {
-      "id": "u1773844422014",
-      "username": "nasriddinov",
-      "password": "12345",
-      "name": "Шохин",
-      "online": true,
-      "avatarColor": "#c26bff",
-      "bio": "Новый пользователь"
+      "passwordHash": "2a97516c354b68848cdbd8f54a226a0a55b21ed138e207ad6c5cbb9c00aa5aea",
+      "avatarUrl": "",
+      "color": "#10b981",
+      "createdAt": 1773902832552,
+      "lastSeenAt": 1773902832552
     }
   ],
-  "chats": [
+  "sessions": [],
+  "messages": [
     {
-      "id": "c1",
-      "members": [
-        "u1",
-        "u2"
-      ],
-      "messages": [
-        {
-          "id": "m1",
-          "senderId": "u2",
-          "type": "text",
-          "text": "Привет 👋",
-          "createdAt": 1773841113452
-        },
-        {
-          "id": "m2",
-          "senderId": "u1",
-          "type": "text",
-          "text": "Готово, теперь это мобильная версия 😎",
-          "createdAt": 1773841413452
-        },
-        {
-          "id": "m3",
-          "senderId": "u2",
-          "type": "image",
-          "image": "data:image/svg+xml;base64,CiAgICA8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjQ4MCIgaGVpZ2h0PSIzMDAiIHZpZXdCb3g9IjAgMCA0ODAgMzAwIj4KICAgICAgPGRlZnM+CiAgICAgICAgPGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeDI9IjEiIHkxPSIwIiB5Mj0iMSI+CiAgICAgICAgICA8c3RvcCBzdG9wLWNvbG9yPSIjNmFhOWZmIiBvZmZzZXQ9IjAiLz4KICAgICAgICAgIDxzdG9wIHN0b3AtY29sb3I9IiM3ZWYwYzMiIG9mZnNldD0iMSIvPgogICAgICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICAgIDwvZGVmcz4KICAgICAgPHJlY3Qgd2lkdGg9IjQ4MCIgaGVpZ2h0PSIzMDAiIHJ4PSIyNCIgZmlsbD0idXJsKCNnKSIvPgogICAgICA8Y2lyY2xlIGN4PSIxMjAiIGN5PSI5MCIgcj0iMzIiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsLjgpIi8+CiAgICAgIDxwYXRoIGQ9Ik0wIDIzMCBDOTAgMTUwLCAxNzAgMjgwLCAyNjAgMjEwIFM0MjAgMTUwLCA0ODAgMjIwIFYzMDAgSDAgWiIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwuNDUpIi8+CiAgICAgIDx0ZXh0IHg9IjM2IiB5PSIyNjAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyOCIgZmlsbD0iIzA4MzA0ZCI+0KTQvtGC0L4g0LIg0YfQsNGC0LU8L3RleHQ+CiAgICA8L3N2Zz4KICA=",
-          "createdAt": 1773841533452
-        },
-        {
-          "id": "m4",
-          "senderId": "u1",
-          "type": "voice",
-          "audio": "data:audio/wav;base64,UklGRlQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YTAAAAAA",
-          "duration": "0:03",
-          "createdAt": 1773841713452
-        }
+      "id": "409bfad2-b29d-46a5-a333-46991820ea9f",
+      "from": "2b88820f-4a2d-4516-8e06-edc811307c8f",
+      "to": "1f1a527f-d7d3-4477-bd66-3c21389aa2d3",
+      "text": "Привет 👋 Это бесплатный мессенджер с аудиозвонками.",
+      "type": "text",
+      "createdAt": 1773902832552,
+      "readBy": [
+        "2b88820f-4a2d-4516-8e06-edc811307c8f"
       ]
     },
     {
-      "id": "c2",
-      "members": [
-        "u1",
-        "u3"
-      ],
-      "messages": [
-        {
-          "id": "m5",
-          "senderId": "u3",
-          "type": "text",
-          "text": "Проверим как выглядит на телефоне?",
-          "createdAt": 1773837213452
-        },
-        {
-          "id": "m6",
-          "senderId": "u1",
-          "type": "text",
-          "text": "Да, интерфейс уже под iPhone/Android.",
-          "createdAt": 1773837813452
-        }
+      "id": "4e49a8d3-84c4-4ebf-a2d5-5044fe0b9bbd",
+      "from": "1f1a527f-d7d3-4477-bd66-3c21389aa2d3",
+      "to": "2b88820f-4a2d-4516-8e06-edc811307c8f",
+      "text": "Проверим чат и звонки?",
+      "type": "text",
+      "createdAt": 1773902832552,
+      "readBy": [
+        "1f1a527f-d7d3-4477-bd66-3c21389aa2d3"
+      ]
+    },
+    {
+      "id": "12327b6a-73af-4e11-92d1-c69a5733ae2a",
+      "from": "f3cb1eea-25be-4d85-8999-dee1c5e1e029",
+      "to": "2b88820f-4a2d-4516-8e06-edc811307c8f",
+      "text": "Я тоже здесь. У меня свой номер и профиль.",
+      "type": "text",
+      "createdAt": 1773902832552,
+      "readBy": [
+        "f3cb1eea-25be-4d85-8999-dee1c5e1e029"
       ]
     }
-  ]
+  ],
+  "typing": {},
+  "activeCalls": {}
 }

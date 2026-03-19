@@ -1,38 +1,27 @@
-# Telegram Mobile Lite (PWA)
+# Railway Messenger Fixed
 
-Мобильная веб-версия мессенджера в стиле Telegram, адаптированная под iPhone/Android.
+Готовый Node.js/PWA-мессенджер для Railway.
 
-## Что умеет
-- мобильный интерфейс
-- вход и регистрация
-- список чатов
-- экран диалога
-- отправка текста
-- отправка фото
-- голосовые сообщения через микрофон
-- установка на главный экран как PWA
+## Что исправлено
+- запуск на `process.env.PORT`
+- bind на `0.0.0.0`
+- автосоздание `data/` и `data/uploads/`
+- `npm start` для Railway
 
-## Запуск
+## Локальный запуск
 ```powershell
-cd telegram-pwa-mobile
 npm.cmd install
 npm.cmd start
 ```
 
-Открыть в браузере:
-```text
-http://localhost:3000
-```
+Открыть: `http://localhost:3000`
 
-## Демо-вход
-- demo / demo
-- alina / demo
-- max / demo
+## Railway
+- Build Command: `npm install`
+- Start Command: `npm start`
+- Port: Railway подхватит автоматически через `process.env.PORT`
 
-## Установка на iPhone
-1. Открой сайт в Safari
-2. Нажми Поделиться
-3. Выбери «На экран Домой»
-
-## Примечание
-Это локальный MVP. Для реального обмена сообщениями между разными устройствами в интернете понадобится публичный сервер.
+## Демо-аккаунты
+- `+10000000001 / demo`
+- `+10000000002 / demo`
+- `+10000000003 / demo`

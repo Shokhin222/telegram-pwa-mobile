@@ -3,13 +3,281 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0e1621" />
-  <title>Telegram Mobile Lite</title>
-  <link rel="manifest" href="/manifest.json" />
-  <link rel="stylesheet" href="/styles.css" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>Phone Messenger</title>
+  <style>
+    :root{--bg:#0b1220;--panel:#111827;--panel2:#172033;--accent:#4f46e5;--accent2:#22c55e;--text:#e5eefc;--muted:#94a3b8;--bubble:#1e293b;--bubbleMe:#334155;--danger:#ef4444}
+    *{box-sizing:border-box}html,body{margin:0;height:100%;font-family:Inter,system-ui,Segoe UI,Roboto,sans-serif;background:linear-gradient(180deg,#0b1220,#0f172a);color:var(--text)}
+    body{overflow:hidden}.hidden{display:none!important}.app{display:flex;height:100dvh}.sidebar{width:360px;max-width:100%;background:rgba(17,24,39,.93);backdrop-filter:blur(14px);border-right:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column}.content{flex:1;display:flex;flex-direction:column;position:relative}
+    .top{padding:16px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;gap:12px;align-items:center}.brand{font-weight:700}.search{background:#0f172a;border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:12px;color:#fff;width:100%}
+    .list{overflow:auto;padding:8px}.chatItem{display:flex;align-items:center;gap:12px;padding:12px;border-radius:18px;cursor:pointer;transition:.2s}.chatItem:hover,.chatItem.active{background:rgba(79,70,229,.16)}
+    .avatar{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#4f46e5,#06b6d4);font-weight:700;color:#fff;overflow:hidden;flex:0 0 auto}.avatar img{width:100%;height:100%;object-fit:cover}
+    .muted{color:var(--muted)} .small{font-size:12px}.grow{flex:1;min-width:0}.row{display:flex;align-items:center;gap:8px}.name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .badge{background:var(--accent);color:#fff;border-radius:999px;padding:2px 8px;font-size:12px}.statusDot{width:10px;height:10px;border-radius:50%;background:#475569}.statusDot.online{background:var(--accent2)}
+    .header{padding:16px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:12px;background:rgba(15,23,42,.72);backdrop-filter:blur(10px)}
+    .messages{flex:1;overflow:auto;padding:20px;display:flex;flex-direction:column;gap:12px;background:radial-gradient(circle at top,#0f1b31,#0b1220 65%)}
+    .bubble{max-width:min(78%,560px);padding:12px 14px;border-radius:18px;background:var(--bubble);align-self:flex-start;animation:pop .18s ease}.bubble.me{background:linear-gradient(180deg,#334155,#253247);align-self:flex-end}.meta{font-size:11px;color:#9fb0c7;margin-top:6px;text-align:right}
+    .composer{padding:14px;border-top:1px solid rgba(255,255,255,.06);display:flex;gap:10px;align-items:center;background:rgba(17,24,39,.93)}
+    .composer input[type=text]{flex:1;background:#0f172a;border:1px solid rgba(255,255,255,.06);color:#fff;padding:14px;border-radius:16px}.btn{border:none;background:var(--accent);color:#fff;border-radius:16px;padding:12px 14px;font-weight:600;cursor:pointer;transition:.2s}.btn.secondary{background:#1f2937}.btn.danger{background:var(--danger)}.iconBtn{width:44px;height:44px;border-radius:14px;display:grid;place-items:center}
+    .empty{flex:1;display:grid;place-items:center;color:#a8b6cc;padding:24px;text-align:center}.auth{height:100dvh;display:grid;place-items:center;padding:20px}.card{width:min(100%,420px);background:rgba(17,24,39,.94);border:1px solid rgba(255,255,255,.08);border-radius:28px;padding:22px;box-shadow:0 10px 40px rgba(0,0,0,.28)}
+    .card h1{margin:0 0 8px}.card p{margin:0 0 18px;color:var(--muted)}.card input{width:100%;margin:8px 0;padding:14px;border-radius:16px;border:1px solid rgba(255,255,255,.08);background:#0f172a;color:#fff}.tabs{display:flex;gap:10px;margin-bottom:10px}.tab{flex:1;padding:10px;border-radius:14px;background:#0f172a;border:1px solid rgba(255,255,255,.08);text-align:center;cursor:pointer}.tab.active{background:rgba(79,70,229,.18);border-color:rgba(79,70,229,.45)}
+    .toolbar{display:flex;gap:8px;align-items:center}.typing{padding:0 20px 8px;color:#8ab4f8;font-size:12px}.media{max-width:100%;border-radius:14px;margin-top:8px}.callBar{position:absolute;top:14px;right:14px;display:flex;gap:8px;z-index:20}.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#111827;border:1px solid rgba(255,255,255,.08);padding:12px 16px;border-radius:14px;display:none}
+    .incoming{position:fixed;inset:0;background:rgba(2,6,23,.75);display:none;place-items:center;z-index:30}.incoming .box{background:#111827;padding:24px;border-radius:24px;width:min(92vw,360px);text-align:center}
+    @keyframes pop{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:none}}
+    @media (max-width: 860px){.sidebar{width:100%}.content{display:none}.app.mobile-chat .sidebar{display:none}.app.mobile-chat .content{display:flex}.backBtn{display:inline-grid!important}.callBar{top:auto;bottom:82px;right:14px}}
+    .backBtn{display:none}
+  </style>
 </head>
 <body>
-  <div id="app"></div>
-  <script src="/app.js"></script>
+<div id="auth" class="auth">
+  <div class="card">
+    <div class="tabs">
+      <div class="tab active" data-mode="login">Вход</div>
+      <div class="tab" data-mode="register">Регистрация</div>
+    </div>
+    <h1>Phone Messenger</h1>
+    <p>Бесплатный мессенджер с чатами и WebRTC-звонками.</p>
+    <div id="registerFields" class="hidden">
+      <input id="regName" placeholder="Имя" />
+      <input id="regTelegram" placeholder="Telegram @username (необязательно)" />
+    </div>
+    <input id="phone" placeholder="Номер телефона" value="+10000000001" />
+    <input id="password" placeholder="Пароль" value="demo" type="password" />
+    <button id="authBtn" class="btn" style="width:100%;margin-top:8px">Войти</button>
+    <p class="small" style="margin-top:12px">Демо: +10000000001 / demo</p>
+  </div>
+</div>
+
+<div id="app" class="app hidden">
+  <div class="sidebar">
+    <div class="top">
+      <div class="avatar" id="meAvatar"></div>
+      <div class="grow">
+        <div class="brand" id="meName"></div>
+        <div class="muted small" id="mePhone"></div>
+      </div>
+      <label class="btn secondary small" style="padding:10px 12px;cursor:pointer">
+        Фото<input id="avatarInput" type="file" accept="image/*" hidden />
+      </label>
+    </div>
+    <div style="padding:12px"><input class="search" id="search" placeholder="Поиск чатов" /></div>
+    <div class="list" id="chatList"></div>
+  </div>
+  <div class="content">
+    <div id="empty" class="empty">Выбери чат слева и начни переписку</div>
+    <div id="chatWrap" class="hidden" style="display:flex;flex-direction:column;height:100%">
+      <div class="header">
+        <button id="backBtn" class="btn secondary iconBtn backBtn">←</button>
+        <div class="avatar" id="peerAvatar"></div>
+        <div class="grow">
+          <div class="name" id="peerName"></div>
+          <div class="row small muted"><span id="peerStatusDot" class="statusDot"></span><span id="peerStatus"></span></div>
+        </div>
+      </div>
+      <div class="callBar">
+        <button id="callBtn" class="btn iconBtn">📞</button>
+        <label class="btn secondary iconBtn">📎<input id="fileInput" type="file" accept="image/*,audio/*" hidden /></label>
+      </div>
+      <div id="typing" class="typing"></div>
+      <div id="messages" class="messages"></div>
+      <div class="composer">
+        <button id="recordBtn" class="btn secondary iconBtn">🎤</button>
+        <input id="messageInput" type="text" placeholder="Сообщение" />
+        <button id="sendBtn" class="btn iconBtn">➤</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+<div id="incoming" class="incoming">
+  <div class="box">
+    <h2 style="margin-top:0">Входящий звонок</h2>
+    <p id="incomingText"></p>
+    <div class="row" style="justify-content:center;margin-top:16px">
+      <button id="acceptCall" class="btn">Принять</button>
+      <button id="rejectCall" class="btn danger">Сбросить</button>
+    </div>
+  </div>
+</div>
+<audio id="remoteAudio" autoplay></audio>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const state = { mode:'login', me:null, users:[], messages:[], current:null, online:{}, typing:{}, socket:null, pc:null, mediaStream:null, incomingFrom:null, recorder:null, chunks:[] };
+const toast = msg => { const t=$('#toast'); t.textContent=msg; t.style.display='block'; clearTimeout(t._x); t._x=setTimeout(()=>t.style.display='none',2200); };
+const initials = n => (n||'?').trim().split(/\s+/).slice(0,2).map(x=>x[0]?.toUpperCase()).join('') || '?';
+const avatarHtml = u => u.avatar ? `<img src="${u.avatar}" alt="">` : initials(u.name||u.phone);
+const fmtTime = ts => new Date(ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+const isMobile = () => window.innerWidth <= 860;
+
+function saveSession(){ localStorage.setItem('pm_user', JSON.stringify(state.me)); }
+function loadSession(){ try { return JSON.parse(localStorage.getItem('pm_user')); } catch { return null; } }
+
+function setMode(mode){ state.mode=mode; document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.mode===mode)); $('#registerFields').classList.toggle('hidden',mode!=='register'); $('#authBtn').textContent = mode==='login' ? 'Войти' : 'Создать аккаунт'; }
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>setMode(t.dataset.mode));
+
+async function auth(){
+  const phone=$('#phone').value.trim(); const password=$('#password').value.trim();
+  const url = state.mode==='login' ? '/api/login' : '/api/register';
+  const body = state.mode==='login' ? {phone,password} : {phone,password,name:$('#regName').value.trim(),telegram:$('#regTelegram').value.trim()};
+  const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const data = await r.json();
+  if(!r.ok){ toast(data.error||'Ошибка'); return; }
+  state.me = data.user; saveSession(); await bootstrap();
+}
+$('#authBtn').onclick=auth;
+
+async function bootstrap(){
+  const r=await fetch(`/api/bootstrap/${state.me.id}`); const data=await r.json();
+  state.me=data.me; state.users=data.users; state.messages=data.messages; $('#auth').classList.add('hidden'); $('#app').classList.remove('hidden');
+  $('#meAvatar').innerHTML=avatarHtml(state.me); $('#meName').textContent=state.me.name; $('#mePhone').textContent=state.me.phone;
+  connectSocket(); renderList();
+}
+
+function lastMessage(userId){ return state.messages.filter(m => [m.from,m.to].includes(userId) && [m.from,m.to].includes(state.me.id)).sort((a,b)=>b.createdAt-a.createdAt)[0]; }
+function unreadCount(userId){ return 0; }
+function renderList(){
+  const q=$('#search').value.trim().toLowerCase();
+  const items=state.users.filter(u => !q || [u.name,u.phone,u.telegram].join(' ').toLowerCase().includes(q)).map(u=>{
+    const last=lastMessage(u.id); const online=!!state.online[u.id];
+    return `<div class="chatItem ${state.current?.id===u.id?'active':''}" data-id="${u.id}">
+      <div class="avatar">${avatarHtml(u)}</div>
+      <div class="grow">
+        <div class="row"><div class="name">${u.name}</div><div class="statusDot ${online?'online':''}"></div></div>
+        <div class="muted small">${last ? (last.type==='text'?last.text:(last.type==='image'?'📷 Фото':last.type==='audio'?'🎤 Голосовое':'📎 Файл')) : u.phone}</div>
+      </div>
+      ${unreadCount(u.id)?`<div class="badge">${unreadCount(u.id)}</div>`:''}
+    </div>`;
+  }).join('');
+  $('#chatList').innerHTML = items || `<div class="muted" style="padding:12px">Ничего не найдено</div>`;
+  document.querySelectorAll('.chatItem').forEach(el=>el.onclick=()=>openChat(el.dataset.id));
+}
+$('#search').oninput=renderList;
+
+function openChat(userId){
+  state.current=state.users.find(u=>u.id===userId); if(!state.current) return;
+  $('#empty').classList.add('hidden'); $('#chatWrap').classList.remove('hidden');
+  $('#peerAvatar').innerHTML=avatarHtml(state.current); $('#peerName').textContent=state.current.name;
+  updatePeerStatus(); renderMessages(); if(isMobile()) $('#app').classList.add('mobile-chat');
+}
+$('#backBtn').onclick=()=>$('#app').classList.remove('mobile-chat');
+
+function updatePeerStatus(){
+  if(!state.current) return; const online=!!state.online[state.current.id];
+  $('#peerStatus').textContent = online ? 'в сети' : 'не в сети';
+  $('#peerStatusDot').classList.toggle('online', online);
+}
+
+function peerMessages(){
+  if(!state.current) return [];
+  return state.messages.filter(m => [m.from,m.to].includes(state.me.id) && [m.from,m.to].includes(state.current.id)).sort((a,b)=>a.createdAt-b.createdAt);
+}
+
+function renderMessages(){
+  const html=peerMessages().map(m=>{
+    const me=m.from===state.me.id;
+    let body='';
+    if(m.type==='text') body = `<div>${escapeHtml(m.text)}</div>`;
+    if(m.type==='image') body = `<img class="media" src="${m.url}" alt="image">`;
+    if(m.type==='audio') body = `<audio class="media" controls src="${m.url}"></audio>`;
+    if(m.type==='file') body = `<a href="${m.url}" target="_blank" style="color:#93c5fd">📎 ${escapeHtml(m.name||'файл')}</a>`;
+    return `<div class="bubble ${me?'me':''}">${body}<div class="meta">${fmtTime(m.createdAt)}</div></div>`;
+  }).join('');
+  $('#messages').innerHTML=html; $('#messages').scrollTop=$('#messages').scrollHeight;
+}
+
+function escapeHtml(s=''){ return s.replace(/[&<>\"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function connectSocket(){
+  state.socket = io();
+  state.socket.emit('auth', { userId: state.me.id });
+  state.socket.on('presence', ({userId,online})=>{ state.online[userId]=online; renderList(); updatePeerStatus(); });
+  state.socket.on('typing', ({from,isTyping})=>{ if(state.current?.id===from) $('#typing').textContent=isTyping?'печатает...':''; });
+  state.socket.on('message', msg=>{ state.messages.push(msg); renderList(); renderMessages(); });
+  state.socket.on('call:incoming', ({from,name})=>{ state.incomingFrom=from; $('#incomingText').textContent=`${name||'Пользователь'} звонит тебе`; $('#incoming').style.display='grid'; });
+  state.socket.on('call:signal', async ({from,type,data})=>{ await handleSignal(from,type,data); });
+  state.socket.on('call:end', ()=>endCall(true));
+  state.socket.on('call:unavailable', ()=>toast('Пользователь не в сети'));
+}
+
+$('#messageInput').addEventListener('input',()=>{ if(state.current) state.socket.emit('typing',{from:state.me.id,to:state.current.id,isTyping:$('#messageInput').value.length>0}); });
+$('#sendBtn').onclick=sendText;
+$('#messageInput').addEventListener('keydown', e=>{ if(e.key==='Enter') sendText(); });
+function sendText(){ const text=$('#messageInput').value.trim(); if(!text||!state.current) return; state.socket.emit('message',{from:state.me.id,to:state.current.id,text,type:'text'}); $('#messageInput').value=''; state.socket.emit('typing',{from:state.me.id,to:state.current.id,isTyping:false}); }
+
+$('#avatarInput').onchange = async e => {
+  const file=e.target.files[0]; if(!file) return; const fd=new FormData(); fd.append('avatar',file);
+  const r=await fetch(`/api/avatar/${state.me.id}`,{method:'POST',body:fd}); const data=await r.json(); if(data.user){ state.me=data.user; $('#meAvatar').innerHTML=avatarHtml(state.me); toast('Аватар обновлён'); }
+};
+
+$('#fileInput').onchange = async e => {
+  const file=e.target.files[0]; if(!file || !state.current) return; const fd=new FormData(); fd.append('file',file);
+  const r=await fetch(`/api/upload/${state.me.id}`,{method:'POST',body:fd}); const data=await r.json();
+  if(data.url) state.socket.emit('message',{from:state.me.id,to:state.current.id,type:data.kind,url:data.url,name:data.name});
+};
+
+$('#recordBtn').onclick = async () => {
+  if(state.recorder && state.recorder.state==='recording'){ state.recorder.stop(); return; }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+    state.chunks=[]; state.recorder = new MediaRecorder(stream);
+    state.recorder.ondataavailable = e => state.chunks.push(e.data);
+    state.recorder.onstop = async () => {
+      const blob = new Blob(state.chunks, { type:'audio/webm' });
+      const file = new File([blob], 'voice.webm', { type:'audio/webm' });
+      const fd=new FormData(); fd.append('file',file);
+      const r=await fetch(`/api/upload/${state.me.id}`,{method:'POST',body:fd}); const data=await r.json();
+      if(data.url && state.current) state.socket.emit('message',{from:state.me.id,to:state.current.id,type:'audio',url:data.url,name:'voice.webm'});
+      stream.getTracks().forEach(t=>t.stop()); $('#recordBtn').textContent='🎤';
+    };
+    state.recorder.start(); $('#recordBtn').textContent='⏹'; toast('Запись...');
+  } catch { toast('Дай доступ к микрофону'); }
+};
+
+async function ensureCallPc(){
+  if(state.pc) return state.pc;
+  state.mediaStream = await navigator.mediaDevices.getUserMedia({ audio:true, video:false });
+  const pc = new RTCPeerConnection({ iceServers:[{urls:'stun:stun.l.google.com:19302'}] });
+  state.mediaStream.getTracks().forEach(track=>pc.addTrack(track,state.mediaStream));
+  pc.onicecandidate = e => { if(e.candidate && state.current) state.socket.emit('call:signal',{from:state.me.id,to:state.current.id,type:'candidate',data:e.candidate}); };
+  pc.ontrack = e => { $('#remoteAudio').srcObject = e.streams[0]; };
+  pc.onconnectionstatechange = ()=>{ if(['disconnected','failed','closed'].includes(pc.connectionState)) endCall(true); };
+  state.pc=pc; return pc;
+}
+
+$('#callBtn').onclick = async () => {
+  if(!state.current) return; try {
+    await ensureCallPc(); state.socket.emit('call:start',{from:state.me.id,to:state.current.id,name:state.me.name});
+    const offer = await state.pc.createOffer(); await state.pc.setLocalDescription(offer);
+    state.socket.emit('call:signal',{from:state.me.id,to:state.current.id,type:'offer',data:offer}); toast('Звоним...');
+  } catch { toast('Не удалось начать звонок'); }
+};
+
+async function handleSignal(from,type,data){
+  if(type==='offer'){
+    state.incomingFrom=from;
+    state.current = state.users.find(u=>u.id===from) || state.current;
+    if(state.current) openChat(state.current.id);
+    const pc = await ensureCallPc();
+    await pc.setRemoteDescription(new RTCSessionDescription(data));
+    $('#incoming').style.display='grid';
+    return;
+  }
+  if(type==='answer' && state.pc){ await state.pc.setRemoteDescription(new RTCSessionDescription(data)); toast('Звонок подключён'); return; }
+  if(type==='candidate' && state.pc){ try { await state.pc.addIceCandidate(new RTCIceCandidate(data)); } catch {} }
+}
+
+$('#acceptCall').onclick = async () => {
+  $('#incoming').style.display='none';
+  const pc = await ensureCallPc();
+  const answer = await pc.createAnswer(); await pc.setLocalDescription(answer);
+  state.socket.emit('call:signal',{from:state.me.id,to:state.incomingFrom,type:'answer',data:answer}); toast('Звонок принят');
+};
+$('#rejectCall').onclick = () => { $('#incoming').style.display='none'; if(state.incomingFrom){ state.socket.emit('call:end',{from:state.me.id,to:state.incomingFrom}); state.incomingFrom=null; } };
+function endCall(silent){ if(state.mediaStream) state.mediaStream.getTracks().forEach(t=>t.stop()); if(state.pc) state.pc.close(); state.mediaStream=null; state.pc=null; $('#remoteAudio').srcObject=null; if(!silent&&state.current) state.socket.emit('call:end',{from:state.me.id,to:state.current.id}); }
+window.addEventListener('beforeunload', ()=>endCall(true));
+
+(async function init(){ const saved=loadSession(); if(saved){ state.me=saved; try{ await bootstrap(); }catch{} } })();
+</script>
 </body>
 </html>
